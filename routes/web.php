@@ -19,4 +19,10 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/products', [App\Http\Controllers\productsController::class, 'index'])->name('products.index');
+Route::post('/products', [App\Http\Controllers\productsController::class, 'store'])->name('products.store');
+Route::get('/products', [App\Http\Controllers\productsController::class, 'create'])->name('products.create');
+Route::get('/products', [App\Http\Controllers\productsController::class, 'show'])->name('products.show');
+Route::put('/products', [App\Http\Controllers\productsController::class, 'update'])->name('products.update');
+Route::delete('/products', [App\Http\Controllers\productsController::class, 'destroy'])->name('products.destroy');
+Route::get('/products', [App\Http\Controllers\productsController::class, 'edit'])->name('products.edit');
