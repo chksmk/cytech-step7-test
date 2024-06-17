@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 
-class ProductController extends Controller
+class productsController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -163,14 +163,13 @@ class ProductController extends Controller
 
     //Update(更新)
     //edit=データ編集用フォーム表示
-    public function edit($id)
+    public function edit(Product $product)
     {
-        $product = Product::find($id);
+        // 商品編集画面で会社の情報が必要なので、全ての会社の情報を取得します。
         $companies = Company::all();
-        //→会社情報が必要
 
+        // 商品編集画面を表示します。その際に、商品の情報と会社の情報を画面に渡します。
         return view('products.edit', compact('product', 'companies'));
-
     }
     
     /**
