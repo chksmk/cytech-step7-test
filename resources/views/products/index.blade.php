@@ -4,8 +4,31 @@
 <div class="container">
     <h1 class="mb-4">商品一覧画面</h1>
 
-    
+    <div class="search mt-5">
+        {{-- 検索フォーム GETで商品一覧ルートにデータ送信  --}}
+        <form action="{{ route('products.index') }}" method="GET" class="form-inline row g-3">
+            
+            {{-- 以下、検索項目入力欄   --}}
+            <div class="form-group col-sm-12 col-md-3">
+                <input type="text" name="search" class="form-control" placeholder="検索キーワード" value="{{ request('search') }}">
+            </div>
 
+            <!-- メーカー名の入力欄 -->
+            <div class="col-sm-12 col-md-4">
+                <select name="medium" data-toggle="select">
+                    <option disabled style='display:none;' @if (empty($post->company_name)) selected @endif>メーカー名</option>
+                    @foreach ($companies as $company)
+                        <option value="{{ $company->id }}">{{ $company->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="form-group col-sm-12 col-md-3">
+                <button class="btn btn-outline-secondary" type="submit">検索</button>
+            </div>
+
+        </form>
+    </div>
    
 
     <div class="products mt-5">
