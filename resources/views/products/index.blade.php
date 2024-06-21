@@ -18,7 +18,7 @@
                 <select name="medium" data-toggle="select">
                     <option disabled style='display:none;' @if (empty($post->company_name)) selected @endif>メーカー名</option>
                     @foreach ($companies as $company)
-                        <option value="{{ $company->id }}">{{ $company->name }}</option>
+                        <option value="{{ $company->id }}">{{ $company->company_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -52,10 +52,15 @@
                     <td>{{ $product->product_name }}</td>
                     <td>{{ $product->price }}</td>
                     <td>{{ $product->stock }}</td>
-                    <td>{{ $product->company->company_name }}</td>
                     <td>
-                        <a href="{{ route('products.show', $product) }}" class="btn btn-info btn-sm mx-1">詳細表示</a>
-                        <a href="{{ route('products.edit', $product) }}" class="btn btn-primary btn-sm mx-1">編集</a>
+                        @foreach ($companies as $company)
+                            @if($product->company_id === $company->id)
+                                {{ $company->company_name }}
+                            @endif
+                        @endforeach
+                    </td>
+                    <td>
+                        <a href="{{ route('products.show', $product) }}" class="btn btn-info btn-sm mx-1">詳細</a>
                         <form method="POST" action="{{ route('products.destroy', $product) }}" class="d-inline">
                             @csrf
                             @method('DELETE')

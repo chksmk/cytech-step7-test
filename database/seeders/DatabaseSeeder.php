@@ -25,15 +25,11 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
         DB::table('companies')->insert([
-            'id' => 1,
-            'company_name' => 'thenewroad',
-            'street_address' => '〒450-6425 愛知県名古屋市中村区名駅',
-            'representative_name' => '千種',
-
             'id' => 2,
-            'company_name' => '大名古屋ビル',
-            'street_address' => '〒450-6425 愛知県名古屋市中村区名駅2',
-            'representative_name' => '千草'
-        ]);
+            'company_name' => 'land',
+            'street_address' => '〒450-6425 愛知県名古屋市中村区名駅27F',
+            'representative_name' => '加藤',
+
+            ]);     
     }
 }
