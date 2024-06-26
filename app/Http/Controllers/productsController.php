@@ -8,6 +8,8 @@ use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
+use App\Http\Requests\ProductRequest;
+use Illuminate\Support\Facades\DB;
 
 class productsController extends Controller
 {
@@ -76,19 +78,37 @@ class productsController extends Controller
 
     //Create(作成)
      //store=データ新規保存
-     public function store(Request $request) // フォームから送られたデータを　$requestに代入して引数として渡している
+     public function store(ProductRequest $request) // フォームから送られたデータを　$requestに代入して引数として渡している
      {
+        // トランザクション開始
+    DB::beginTransaction();
+
+    try {
+        // 登録処理呼び出し
+        $model = new Product();
+        $model->registProduct($request);
+        DB::commit();
+    } catch (\Exception $e) {
+        report($e);
+        session()->flash('flash_message', '更新が失敗しました');
+    }
+
+    // 処理が完了したらregistにリダイレクト
+    return redirect(route('regist'));
+}
          // リクエストされた情報を確認して、必要な情報が全て揃っているかチェックします。
-         // ->validate()メソッドは送信されたリクエストデータが
-         // 特定の条件を満たしていることを確認します。
-         $request->validate([
-             'product_name' => 'required', //requiredは必須という意味です
-             'company_id' => 'required',
-             'price' => 'required',
-             'stock' => 'required',
-             'comment' => 'nullable', //'nullable'はそのフィールドが未入力でもOKという意味です
-             'img_path' => 'nullable|image|max:2048',
-         ]);
+         // ->validate()メソッドは送信されたリクエストデータが、特定の条件を満たしていることを確認します。
+
+         //Requestsに移行
+         //$request->validate([
+           //  'product_name' => 'required', //requiredは必須という意味です
+           //  'company_id' => 'required',
+           //  'price' => 'required',
+           //  'stock' => 'required',
+           //  'comment' => 'nullable', //'nullable'はそのフィールドが未入力でもOKという意味です
+           //  'img_path' => 'nullable|image|max:2048',
+         //]);
+
          // '|'はパイプと呼ばれる記号で、バリデーションルールを複数指定するときに使います
          // 'image'はそのフィールドが画像ファイルであることを指定するルールです
          // max:2048'は最大2048KB（2メガバイト）までという意味です
