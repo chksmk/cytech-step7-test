@@ -7,13 +7,29 @@
     <div class="search mt-5">
         {{-- 検索フォーム GETで商品一覧ルートにデータ送信  --}}
         <form action="{{ route('products.index') }}" method="GET" class="form-inline row g-3">
-            
-            {{-- 以下、検索項目入力欄   --}}
             <div class="form-group col-sm-12 col-md-3">
-                <input type="text" name="search" class="form-control" placeholder="検索キーワード" value="{{ request('search') }}">
+                <input type="text" name="search" placeholder="検索キーワード" value="{{ $search }}">
             </div>
+            <div class="col-sm-12 col-md-4">
+                <select name="company">
+                    <option value="">メーカーを選択</option>
+                    @foreach ($companies as $company)
+                        <option value="{{ $company->id }}" {{ $companyId == $company->id ? 'selected' : '' }}>
+                            {{ $company->company_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group col-sm-12 col-md-3">
+                <button class="btn btn-outline-secondary" type="submit">検索</button>
+            </div> 
 
-            <!-- メーカー名の入力欄 -->
+            <!-- {{-- 以下、検索項目入力欄   --}}
+            <div class="form-group col-sm-12 col-md-3">
+                 <input type="text" name="search" class="form-control" placeholder="検索キーワード" value="{{ request('search') }}"> 
+            </div> -->
+
+            <!-- メーカー名の入力欄 
             <div class="col-sm-12 col-md-4">
                 <select name="medium" data-toggle="select">
                     <option disabled style='display:none;' @if (empty($post->company_name)) selected @endif>メーカー名</option>
@@ -25,7 +41,7 @@
 
             <div class="form-group col-sm-12 col-md-3">
                 <button class="btn btn-outline-secondary" type="submit">検索</button>
-            </div>
+            </div> -->
 
         </form>
     </div>

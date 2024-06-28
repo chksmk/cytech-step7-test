@@ -14,6 +14,11 @@
                             @method('PUT')
 
                             <div class="mb-3">
+                                <a>ID</a>
+                                <a>{{ $product->id }}</a>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="product_name" class="form-label">商品名
                                  <span class="required" style="color:red">*</span>
                                 </label>

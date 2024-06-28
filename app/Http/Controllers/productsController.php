@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\ProductRequest;
-use Illuminate\Support\Facades\DB;
 
 class productsController extends Controller
 {
@@ -24,27 +23,48 @@ class productsController extends Controller
     //メゾット→index=データ一覧表示
     public function index(Request $request)
     {
-        $products = Product::all();
-        $companies = Company::get();
+        try {
+            $search = $request->input('search');
+            $companyId = $request->input('company');
+
+            $query = Product::query();
+
+            if ($search) {
+                $query->where('product_name', 'like', '%' . $search . '%');
+            }
+
+            if ($companyId) {
+                $query->where('company_id', $companyId);
+            }
+
+            $products = $query->get();
+            $companies = Company::all();
+
+            return view('products.index', compact('products', 'search', 'companies', 'companyId'));
+        } catch (\Exception $e) {
+            
+            return back()->withErrors(['error' => 'エラーが発生しました。']);
+        }
+
+        //$products = Product::all();
+        //$companies = Company::get();
         //Productモデルに基づいて操作要求(クリエ)を初期化
         //この行の後にクエリを逐次構築
-        $query = Product::query();
+        //$query = Product::query();
 
-        if($search = $request->search){
-            $query->where('product_name','LIKE',"%{$search}%");
-        }
+        //if($search = $request->search){
+            //$query->where('product_name','LIKE',"%{$search}%")->get();
+        //}
 
-        if($search = $request->search){
-            $query->where('name',  'LIKE', "%{$search}%");
-        }
+        //if($search = $request->search){
+            //$query->where('company_id',  'LIKE', "%{$search}%")->get();
+        //}
     
+        $products = $query->paginate(10); //10個で１ページ
         
-        $products = $query->paginate(10);
-        $products = Product::all();
-        $companies = Company::get();
     
         // 商品一覧ビューを表示し、取得した商品情報をビューに渡す
-        return view('products.index', ['products' => $products], compact('companies', 'products'));
+        //return view('products.index', ['products' => $products], compact('companies', 'products'));
        
     }
 
@@ -68,7 +88,6 @@ class productsController extends Controller
         
     }
 
-
     /**
      * Store a newly created resource in storage.
      *
@@ -76,83 +95,44 @@ class productsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    //Create(作成)
      //store=データ新規保存
-     public function store(ProductRequest $request) // フォームから送られたデータを　$requestに代入して引数として渡している
-     {
-        // トランザクション開始
-    DB::beginTransaction();
+     //商品新規登録
+    public function store(ProductRequest $request, Product $product) {     
 
-    try {
+        // アップロードされた画像を取得
+        $file = $request->file('img_path');
+        // 取得したファイル名で保存
+        if ($file) {
+            $file_name = $file->getClientOriginalName();
+            $file->storeAs('public/products', $file_name);
+        } else {
+            $file_name = null;
+        }
+
+        $product->product_name = $request->product_name;
+                    $product->company_id = $request->company_id;
+                    $product->price = $request->price;
+                    $product->stock = $request->stock;
+                    $product->comment = $request->comment;
+                    $product->img_path = $file;
+                    $product->save();
+
+        //トランザクション
+        DB::beginTransaction();
+        try {
         // 登録処理呼び出し
-        $model = new Product();
-        $model->registProduct($request);
+           $product = new Product();
+           $product ->createProduct($request, $file_name);
         DB::commit();
-    } catch (\Exception $e) {
-        report($e);
-        session()->flash('flash_message', '更新が失敗しました');
+        } catch (\Exception $e) {
+        DB::rollback();
+        return back();
+        }
+
+
+        //処理が完了したら自画面にリダイレクト
+        return redirect()->route('products.create');
     }
-
-    // 処理が完了したらregistにリダイレクト
-    return redirect(route('regist'));
-}
-         // リクエストされた情報を確認して、必要な情報が全て揃っているかチェックします。
-         // ->validate()メソッドは送信されたリクエストデータが、特定の条件を満たしていることを確認します。
-
-         //Requestsに移行
-         //$request->validate([
-           //  'product_name' => 'required', //requiredは必須という意味です
-           //  'company_id' => 'required',
-           //  'price' => 'required',
-           //  'stock' => 'required',
-           //  'comment' => 'nullable', //'nullable'はそのフィールドが未入力でもOKという意味です
-           //  'img_path' => 'nullable|image|max:2048',
-         //]);
-
-         // '|'はパイプと呼ばれる記号で、バリデーションルールを複数指定するときに使います
-         // 'image'はそのフィールドが画像ファイルであることを指定するルールです
-         // max:2048'は最大2048KB（2メガバイト）までという意味です
-         
-         // フォームが一部空欄のまま送信ボタンを押しても、フォームの画面にリダイレクトされ
-         // フォームの値が未入力である旨の警告メッセージが表示されます
- 
- 
-         // 新しく商品を作ります。そのための情報はリクエストから取得します。
-         $product = new Product([
-             'product_name' => $request->get('product_name'),
-             'company_id' => $request->get('company_id'),
-             'price' => $request->get('price'),
-             'stock' => $request->get('stock'),
-             'comment' => $request->get('comment'),
-         ]);
-         //new Product([]) によって新しい「Product」（レコード）を作成しています。
-         //new を使うことで新しいインスタンスを作成することができます
- 
- 
- 
-         // リクエストに画像が含まれている場合、その画像を保存します。
-         if($request->hasFile('img_path')){ 
-             $filename = $request->img_path->getClientOriginalName();
-             $filePath = $request->img_path->storeAs('products', $filename, 'public');
-             $product->img_path = '/storage/' . $filePath;
-         }
-         // $request->hasFile('img_path')は、ブラウザにアップロードされたファイルが存在しているかを確認
-         // getClientOriginalName()はアップロードしたファイル名を取得するメソッドです。
-        // storeAs('products', $filename, 'public')は
-        //  アップロードされたファイルを特定の場所に特定の名前で保存するためのメソッドです
-        //　今回はstorage/app/publicにproducts" ディレクトリが作られ保存されます
-        //'products'：これはファイルを保存するディレクトリ（フォルダ）の名前を示しています。
-        // この場合は 'products' という名前のディレクトリにファイルが保存されます。
-     //$filename：これは保存するファイルの名前を示しています。
-     // getClientOriginalName() メソッドで取得したオリジナルのファイル名がここに入ります。
-     // 'public' ファイルのアクセス権限を示しています。'public' は公開設定で、誰でもこのファイルにアクセスすることができるようになります。
- 
-         // 作成したデータベースに新しいレコードとして保存します。
-         $product->save();
- 
-         // 全ての処理が終わったら、商品一覧画面に戻ります。
-         return redirect('products');
-     }
  
     /**
      * Display the specified resource.
@@ -181,7 +161,7 @@ class productsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    //Update(更新)
+  
     //edit=データ編集用フォーム表示
      public function edit($id)
     {
@@ -203,35 +183,81 @@ class productsController extends Controller
 
     //Update(更新)
     //update=データ更新
-    public function update(Request $request, Product $product)
+    public function update(Request $request, $id)
     {
-        //更新ボタン
-        DB::beginTransaction();
-
         try {
-            $request->validate([
-                'product_name' => 'required',
-                'price' => 'required',
-                'stock' => 'required',
-            ]);
-    
-            //商品情報を更新
-            //モデルの値を書き換える
-            $product->product_name = $request->product_name;
-            $product->price = $request->price;
-            $product->stock = $request->stock;
-    
-            $product->save();
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back();
-        }
+            $product = Product::find($id);
 
-        return redirect()->route('products.index')
-            ->with('success', 'Product updated successfully');
-        //→ビューにメッセージを送る(代入：success)
-        
+            // 既存画像を取得
+            $path = $request->img_path;
+
+            // 新規画像を取得
+            $img = $request->file('img_path');
+            
+            // 画像を更新する場合
+            if (isset($img)) {
+                
+                // 現在の画像ファイルの削除
+                $img_name = $product->img_path;
+
+                // /storage/app/public/img/画像ファイル名 を削除
+                $img_name = str_replace('public/products/', '', $img_name);
+                Storage::disk('public')->delete('products/' . $img_name);
+
+                // 拡張子付きでファイル名を取得
+                $filename_with_ext = $img->getClientOriginalName();
+
+                // ファイル名のみを取得
+                $filename = pathinfo($filename_with_ext, PATHINFO_FILENAME);
+
+                // 拡張子を取得
+                $extension = $img->getClientOriginalExtension();
+
+                // 保存するファイル名を構築
+                $filename_to_store = $filename."_".date('Ymd_His').".".$extension;
+
+                // 画像フォームでリクエストした画像を取得してstorage > public > img配下に画像を保存
+                $path = $img->storeAs("public/products", $filename_to_store);
+
+                // リサイズされた画像を保存
+                // Image::make($img)->resize(
+                //     450, // 横幅
+                //     300, // 縦幅
+                //     function ($constraint) {
+                //         $constraint->aspectRatio();
+                //         $constraint->upsize();
+                //     } 
+                // )->save(storage_path('app/public/img/'. $filename_to_store));
+
+                // store処理が実行できたらDBに保存処理を実行
+                if ($path) {
+                    // DBに登録する処理
+                    $product->product_name = $request->product_name;
+                    $product->company_id = $request->company_id;
+                    $product->price = $request->price;
+                    $product->stock = $request->stock;
+                    $product->comment = $request->comment;
+                    $product->img_path = $path;
+                    $product->save();
+                }
+            }
+
+            // 画像を更新しない場合
+            if (!isset($img)) {
+
+                $product->product_name = $request->product_name;
+                $product->company_id = $request->company_id;
+                $product->price = $request->price;
+                $product->stock = $request->stock;
+                $product->comment = $request->comment;
+                $product->save();
+            }
+
+            return to_route('products.edit', ['id' => $product->id ] );
+        } catch (\Exception $e) {
+            report($e);
+            session()->flash('flash_message', '更新が失敗しました');
+        }
     }
 
     /**
